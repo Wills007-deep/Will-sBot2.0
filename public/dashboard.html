@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will's Bot | Dashboard</title>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #161b22;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #30363d;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #58a6ff;
+            text-align: center;
+        }
+
+        h2 {
+            color: #8b949e;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: white;
+            border-radius: 6px;
+        }
+
+        button {
+            background: #238636;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #2ea043;
+        }
+
+        .logout {
+            background: #da3633;
+            margin-top: 10px;
+        }
+
+        .logout:hover {
+            background: #f85149;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎛️ Will's Command Center</h1>
+
+        <div class="card">
+            <h2>⚙️ Configuration Générale</h2>
+            <label>Préfixe du Bot</label>
+            <input type="text" id="prefix" placeholder="Ex: ! ou /">
+
+            <label>Nom de l'Application</label>
+            <input type="text" id="appName" placeholder="Will's Bot">
+        </div>
+
+        <div class="card">
+            <h2>👑 Permissions</h2>
+            <label>Propriétaires (Séparés par virgules)</label>
+            <textarea id="owners" rows="3" placeholder="Ex: 237xxxxxx, 336xxxxxx"></textarea>
+
+            <label>Modérateurs (Séparés par virgules)</label>
+            <textarea id="moderators" rows="3" placeholder="Ex: 237xxxxxx"></textarea>
+        </div>
+
+        <button onclick="saveSettings()">💾 Sauvegarder les changements</button>
+        <button class="logout" onclick="logout()">Déconnexion</button>
+    </div>
+
+    <script>
+        const pass = localStorage.getItem('wb_token');
+        if (!pass) window.location.href = '/index.html';
+
+        async function load() {
+            const res = await fetch('/api/settings');
+            const data = await res.json();
+
+            document.getElementById('prefix').value = data.prefix || '!';
+            document.getElementById('appName').value = data.app_name || '';
+            document.getElementById('owners').value = (data.owners || []).join(', ');
+            document.getElementById('moderators').value = (data.moderators || []).join(', ');
+        }
+
+        async function saveSettings() {
+            const prefix = document.getElementById('prefix').value;
+            const app_name = document.getElementById('appName').value;
+
+            // Clean arrays
+            const owners = document.getElementById('owners').value.split(',').map(s => s.trim()).filter(s => s);
+            const moderators = document.getElementById('moderators').value.split(',').map(s => s.trim()).filter(s => s);
+
+            const res = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    password: pass,
+                    prefix,
+                    app_name,
+                    owners,
+                    moderators
+                })
+            });
+
+            if (res.ok) {
+                alert('✅ Configuration sauvegardée avec succès !');
+            } else {
+                alert('❌ Erreur : Mot de passe incorrect ou problème serveur.');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('wb_token');
+            window.location.href = '/index.html';
+        }
+
+        load();
+    </script>
+</body>
+
+</html>

@@ -3,7 +3,7 @@ const path = require('path');
 const logger = require('./logger');
 
 const commands = new Map();
-const prefix = process.env.PREFIX || '!';
+const defaultPrefix = process.env.PREFIX || '!';
 
 /**
  * Charge récursivement toutes les commandes du dossier commands/
@@ -59,6 +59,9 @@ async function handleMessage(sock, m) {
                 (type === 'imageMessage') ? messageHeader.imageMessage.caption :
                     (type === 'videoMessage') ? messageHeader.videoMessage.caption : '';
 
+        // Préfixe dynamique passé depuis index.js
+        const prefix = m.globalPrefix || defaultPrefix;
+
         // --- JEUX ET ÉCOUTES PASSIVES ---
         if (body && !body.startsWith(prefix)) {
             const uniqueCmds = Array.from(new Set(commands.values()));
@@ -97,7 +100,7 @@ async function handleMessage(sock, m) {
             sender,
             isGroup,
             pushName,
-            prefix,
+            prefix, // Préfixe dynamique passé
             commands, // Passer la map des commandes ici
             antideleteGroups: m.antideleteGroups // Passer les groupes anti-delete
         });

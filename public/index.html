@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will's Bot | Login</title>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #c9d1d9;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: #161b22;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            width: 300px;
+            text-align: center;
+            border: 1px solid #30363d;
+        }
+        h1 { color: #58a6ff; margin-bottom: 1.5rem; }
+        input {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 1rem;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: white;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #238636;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #2ea043; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔐 Will's Access</h1>
+        <input type="password" id="pass" placeholder="Mot de passe Admin">
+        <button onclick="login()">Entrer</button>
+    </div>
+    <script>
+        // Simple logic: saves password to localStorage for requests
+        function login() {
+            const pass = document.getElementById('pass').value;
+            localStorage.setItem('wb_token', pass); // Not secure in real prod vs API, but fine for this scope
+            window.location.href = '/dashboard.html';
+        }
+    </script>
+</body>
+</html>

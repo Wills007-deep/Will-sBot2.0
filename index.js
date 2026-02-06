@@ -57,29 +57,54 @@ let antilinkGroups = new Set();
 const SETTINGS_FILE = path.resolve(__dirname, "./data/settings.json");
 let lastOwnerActionTime = Date.now(); // Pour le mode AFK
 
+// Variables globales dynamiques
+let globalOwners = [];
+let globalModerators = new Set();
+let globalPrefix = process.env.PREFIX || "!";
+
 function isOwner(m, sock) {
-    const ownerNum = process.env.OWNER_NUMBER;
+    // 1. Charger depuis ENV (Fallback)
+    const ownerEnv = process.env.OWNER_NUMBER || "";
+    const ownersEnv = ownerEnv.split(',').map(n => n.trim()).filter(n => n);
+
+    // 2. Fusionner avec JSON (Priorité JSON)
+    const allOwners = [...new Set([...ownersEnv, ...globalOwners])];
+
     const sender = m.key.participant || m.key.remoteJid || "";
     const senderClean = sender.split('@')[0].split(':')[0];
     const botClean = sock.user?.id?.split('@')[0]?.split(':')[0];
 
     return m.key.fromMe ||
-        senderClean === ownerNum ||
-        senderClean === botClean ||
-        (m.participant || m.key.participant || "").includes(ownerNum);
+        allOwners.includes(senderClean) ||
+        senderClean === botClean;
 }
 
 function loadSettings() {
     try {
         if (fs.existsSync(SETTINGS_FILE)) {
-            const data = JSON.parse(fs.readFileSync(SETTINGS_FILE));
+            // Force reload
+            delete require.cache[require.resolve(SETTINGS_FILE)];
+            const data = require(SETTINGS_FILE);
+
             antideleteGroups = new Set(data.antidelete || []);
             antilinkGroups = new Set(data.antilink_groups || []);
-            logger.info(`Paramètres chargés: ${antideleteGroups.size} Anti-Faz, ${antilinkGroups.size} Anti-Lien`);
+            globalOwners = data.owners || [];
+            globalModerators = new Set(data.moderators || []);
+            if (data.prefix) globalPrefix = data.prefix;
+
+            logger.info(`Paramètres chargés: ${globalOwners.length} Owners, ${globalModerators.size} Mods, Préfixe: "${globalPrefix}"`);
         }
-    } catch (e) { }
+    } catch (e) {
+        logger.error("Erreur chargement settings:", e);
+    }
 }
 loadSettings();
+
+// Watcher pour recharger automatiquement si le fichier change (Dashboard)
+fs.watchFile(SETTINGS_FILE, () => {
+    logger.info("Changement détecté dans settings.json, rechargement...");
+    loadSettings();
+});
 
 // -- CACHE --
 const antideletePool = new Map();
@@ -295,8 +320,15 @@ async function startBot() {
         // 3. Commandes
         msg.antideleteGroups = antideleteGroups;
         msg.antilinkGroups = antilinkGroups;
+        msg.globalPrefix = globalPrefix; // Passer le préfixe dynamique
+        msg.isOwner = isOwnerMsg;
         await handleMessage(sock, msg);
     });
 }
+
+// --- SERVER DASHBOARD ---
+const startWeb = require('./utils/web');
+const PORT = process.env.PORT || 8000;
+startWeb(PORT);
 
 startBot().catch(err => logger.error("Erreur fatale:", err));
