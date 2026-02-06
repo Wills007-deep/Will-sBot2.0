@@ -26,30 +26,43 @@ const { askGroq } = require("./utils/groq");
 const axios = require("axios");
 
 // --- PERSISTANCE RENDER ---
+let syncTimeout = null;
+
 async function syncSessionToRender() {
     const apiKey = process.env.RENDER_API_KEY;
     const serviceId = process.env.RENDER_SERVICE_ID;
     if (!apiKey || !serviceId) return;
 
-    try {
-        const credsPath = path.join(__dirname, 'auth_info', 'creds.json');
-        if (!fs.existsSync(credsPath)) return;
+    // Debounce : on attend 10 secondes de calme avant d'envoyer
+    if (syncTimeout) clearTimeout(syncTimeout);
 
-        const creds = fs.readFileSync(credsPath, 'utf-8');
-        const sessionBase64 = Buffer.from(creds).toString('base64');
+    syncTimeout = setTimeout(async () => {
+        try {
+            const credsPath = path.join(__dirname, 'auth_info', 'creds.json');
+            if (!fs.existsSync(credsPath)) return;
 
-        if (process.env.SESSION_DATA === sessionBase64) return;
+            const creds = fs.readFileSync(credsPath, 'utf-8');
+            if (!creds || creds.length < 10) return; // Sécurité fichier vide
 
-        logger.info("📤 [Render] Sauvegarde de la session...");
-        // Utilisation de l'endpoint spécifique pour une seule variable (PUT /env-vars/KEY)
-        await axios.put(`https://api.render.com/v1/services/${serviceId}/env-vars/SESSION_DATA`,
-            { value: sessionBase64 },
-            { headers: { Authorization: `Bearer ${apiKey}`, "Accept": "application/json", "Content-Type": "application/json" } }
-        );
-        logger.info("✅ [Render] Session synchronisée.");
-    } catch (error) {
-        logger.error("[Render Sync] Error:", error.message);
-    }
+            const sessionBase64 = Buffer.from(creds).toString('base64');
+
+            if (process.env.SESSION_DATA === sessionBase64) return;
+
+            logger.info("⏳ [Render] Synchronisation en cours...");
+
+            await axios.put(`https://api.render.com/v1/services/${serviceId}/env-vars/SESSION_DATA`,
+                { value: sessionBase64 },
+                { headers: { Authorization: `Bearer ${apiKey}`, "Accept": "application/json", "Content-Type": "application/json" } }
+            );
+
+            logger.info("✅ [Render] Session sauvegardée avec succès.");
+        } catch (error) {
+            // On ignore les 400/405 silencieux pour éviter le spam, on log juste les vrais soucis
+            if (error.response?.status !== 400 && error.response?.status !== 405) {
+                logger.error(`[Render Sync] Warning: ${error.message}`);
+            }
+        }
+    }, 10000); // 10 secondes de délai
 }
 
 // -- GESTION DE L'ÉTAT (SETTINGS) --
