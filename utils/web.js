@@ -44,6 +44,28 @@ app.post('/api/settings', (req, res) => {
     res.json({ success: true });
 });
 
+// 3. Sync Session API (Manuelle)
+app.post('/api/sync-session', async (req, res) => {
+    const { password } = req.body;
+    const settings = JSON.parse(fs.readFileSync(SETTINGS_FILE));
+
+    if (password !== settings.dashboard_password) {
+        return res.status(403).json({ error: "Mot de passe incorrect" });
+    }
+
+    // On délègue la synchro à une fonction qui sera injectée depuis index.js
+    if (global.manualSyncSession) {
+        try {
+            await global.manualSyncSession();
+            res.json({ success: true, message: "Synchro lancée (Redémarrage Render imminent)" });
+        } catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    } else {
+        res.status(500).json({ error: "Fonction de synchro non initialisée" });
+    }
+});
+
 module.exports = (port) => {
     app.listen(port, () => {
         console.log(`🌍 Dashboard accessible sur le port ${port}`);

@@ -103,7 +103,15 @@
             <textarea id="moderators" rows="3" placeholder="Ex: 237xxxxxx"></textarea>
         </div>
 
-        <button onclick="saveSettings()">💾 Sauvegarder les changements</button>
+        <div class="card" style="border-color: #f1e05a;">
+            <h2>🔋 Persistance (Anti-Déconnexion)</h2>
+            <p style="font-size: 0.9rem; color: #8b949e;">Cliquez sur le bouton ci-dessous pour sauvegarder votre
+                connexion actuelle sur Render. <b>Attention : Le bot redémarrera.</b></p>
+            <button onclick="syncSession()" style="background: #f1e05a; color: black;">💾 Sauvegarder la session
+                WhatsApp</button>
+        </div>
+
+        <button onclick="saveSettings()">💾 Sauvegarder les paramètres</button>
         <button class="logout" onclick="logout()">Déconnexion</button>
     </div>
 
@@ -145,6 +153,23 @@
                 alert('✅ Configuration sauvegardée avec succès !');
             } else {
                 alert('❌ Erreur : Mot de passe incorrect ou problème serveur.');
+            }
+        }
+
+        async function syncSession() {
+            if (!confirm("Le bot va sauvegarder la session et REDÉMARRER sur Render. Continuer ?")) return;
+
+            const res = await fetch('/api/sync-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pass })
+            });
+
+            if (res.ok) {
+                alert('🚀 Session envoyée ! Le bot va redémarrer dans quelques secondes. Attendez 2-3 minutes qu\'il redevienne "Live".');
+            } else {
+                const data = await res.json();
+                alert('❌ Erreur : ' + data.error);
             }
         }
 

@@ -19,7 +19,7 @@ function cleanNumber(num) {
 module.exports = {
     name: "admin",
     description: "Commandes de gestion du bot",
-    aliases: ["setprefix", "addowner", "delowner", "addmod", "delmod"],
+    aliases: ["setprefix", "addowner", "delowner", "addmod", "delmod", "savesession", "sync"],
     async execute(sock, m, { args, body, remoteJid, isOwner, prefix }) {
         if (!isOwner) {
             return sock.sendMessage(remoteJid, { text: "⛔ Commande réservée au propriétaire." }, { quoted: m });
@@ -76,6 +76,21 @@ module.exports = {
                 s.moderators = s.moderators.filter(o => o !== target);
             });
             await sock.sendMessage(remoteJid, { text: `🗑️ Modérateur retiré : ${target}` });
+        }
+
+        // --- 3. SAUVEGARDE SESSION ---
+        if (cmd === 'savesession' || cmd === 'sync') {
+            await sock.sendMessage(remoteJid, { text: "🚀 Tentative de sauvegarde de la session sur Render...\n\n_Note : Le bot redémarrera d'ici 1-2 minutes._" });
+            try {
+                if (global.manualSyncSession) {
+                    await global.manualSyncSession();
+                    await sock.sendMessage(remoteJid, { text: "✅ Signal envoyé à Render ! Redémarrage imminent..." });
+                } else {
+                    throw new Error("Fonction de synchro non disponible.");
+                }
+            } catch (e) {
+                await sock.sendMessage(remoteJid, { text: `❌ Erreur : ${e.message}` });
+            }
         }
     }
 };

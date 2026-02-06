@@ -65,6 +65,34 @@ async function syncSessionToRender() {
     }, 10000); // 10 secondes de délai
 }
 
+// Export pour le Dashboard
+global.manualSyncSession = async () => {
+    const apiKey = process.env.RENDER_API_KEY;
+    const serviceId = process.env.RENDER_SERVICE_ID;
+    if (!apiKey || !serviceId) throw new Error("Clés Render (API_KEY/SERVICE_ID) manquantes dans le .env");
+
+    const credsPath = path.join(__dirname, 'auth_info', 'creds.json');
+    if (!fs.existsSync(credsPath)) throw new Error("Fichier de session (creds.json) introuvable");
+
+    const creds = fs.readFileSync(credsPath, 'utf-8');
+    const sessionBase64 = Buffer.from(creds).toString('base64');
+
+    logger.info("🚀 [Manual Sync] Envoi de la session vers Render...");
+    await axios.put(`https://api.render.com/v1/services/${serviceId}/env-vars/SESSION_DATA`,
+        { value: sessionBase64 },
+        { headers: { Authorization: `Bearer ${apiKey}`, "Accept": "application/json", "Content-Type": "application/json" } }
+    );
+};
+
+// --- KEEP ALIVE ---
+// Ping toutes les 5 minutes pour éviter que Render ne s'endorme (Free tier)
+setInterval(() => {
+    const url = process.env.RENDER_EXTERNAL_URL; // À ajouter dans les variables Render si possible
+    if (url) {
+        axios.get(url).catch(() => { });
+    }
+}, 5 * 60 * 1000);
+
 // -- GESTION DE L'ÉTAT (SETTINGS) --
 let antideleteGroups = new Set();
 let antilinkGroups = new Set();
