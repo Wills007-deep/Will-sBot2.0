@@ -203,7 +203,8 @@ async function startBot() {
 
     sock.ev.on("creds.update", async () => {
         await saveCreds();
-        if (sock?.user) await syncSessionToRender();
+        // DÉSACTIVÉ POUR ÉVITER BOUCLE DE REDÉMARRAGE RENDER
+        // if (sock?.user) await syncSessionToRender();
     });
 
     // --- ANTI-DELETE ---
