@@ -198,6 +198,8 @@ async function startBot() {
         printQRInTerminal: false,
         auth: state,
         browser: ["Will's Bot 2.0", "MacOS", "Desktop"],
+        markOnlineOnConnect: true,
+        keepAliveIntervalMs: 30000,
         getMessage: async (key) => {
             if (messageCache.has(key.id)) {
                 const msg = messageCache.get(key.id);

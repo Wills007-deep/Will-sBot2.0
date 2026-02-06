@@ -8,6 +8,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Keep Alive Endpoint
+app.get('/ping', (req, res) => res.send('pong'));
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok', uptime: process.uptime() }));
+
 // Middleware d'authentification simple
 function checkAuth(req, res, next) {
     // Pour l'instant, on fait simple : le mot de passe est stocké dans settings
