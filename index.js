@@ -41,8 +41,9 @@ async function syncSessionToRender() {
         if (process.env.SESSION_DATA === sessionBase64) return;
 
         logger.info("📤 [Render] Sauvegarde de la session...");
-        await axios.patch(`https://api.render.com/v1/services/${serviceId}/env-vars`,
-            [{ key: "SESSION_DATA", value: sessionBase64 }],
+        // Utilisation de l'endpoint spécifique pour une seule variable (PUT /env-vars/KEY)
+        await axios.put(`https://api.render.com/v1/services/${serviceId}/env-vars/SESSION_DATA`,
+            { value: sessionBase64 },
             { headers: { Authorization: `Bearer ${apiKey}`, "Accept": "application/json", "Content-Type": "application/json" } }
         );
         logger.info("✅ [Render] Session synchronisée.");
